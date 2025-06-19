@@ -1,0 +1,84 @@
+import sequelize from './models/dbConfig.js';
+import express from "express";
+import http from 'http';
+import dotenv from 'dotenv'
+
+// Import models
+import { User } from './models/usersModel.js';
+import { ChatMessage } from './models/chatMessageModel.js';
+import { ChatRoom } from './models/chatRoomModel.js';
+import { ChatParticipant } from './models/chatParticipantsModel.js';
+import { ChatMessageEdit } from './models/chatMessageEditModel.js';
+import { ChatMessageSeen } from './models/chatMessageSeenModel.js';
+import { FriendRequest } from './models/friendRequestModel.js';
+import { BlockedUser } from './models/blockedUserModel.js';
+import { UserOtpLogs } from './models/userOtpLogsModel.js';
+import { UserLoginLogs } from './models/userLoginLogsModel.js';
+
+//Import middleware
+import { errorMiddleware } from './middleware/error-middleware.js';
+
+// Import routes
+import {router} from './routes/indexRoutes.js';
+
+// dotenv.config({ path: '../.env' });
+dotenv.config();
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(errorMiddleware);
+
+
+// Set up CORS
+// import cors from 'cors';
+// app.use(cors({
+//   origin: '*', // Allow all origins, adjust as needed
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+//   allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+// }));
+
+       
+// Use routes
+app.use('/api', router);
+
+const httpServer = http.createServer(app);
+
+// Associate all models
+const models = {
+//   sequelize,
+  User,
+  ChatMessage,
+  ChatRoom,
+  ChatParticipant,
+  ChatMessageEdit,
+  ChatMessageSeen,
+  FriendRequest,
+  BlockedUser,
+  UserOtpLogs,
+  UserLoginLogs,
+};
+
+// Initialize associations
+Object.values(models).forEach(model => {
+  if (typeof model.associate === 'function') {
+    model.associate(models);
+  }
+});
+async function startServer(){
+  try {
+      await sequelize.authenticate();
+        console.log("Database connected successfully");
+      await sequelize.sync({alter:true});
+      httpServer.listen(process.env.PORT,()=>{
+        console.log(`Server Running on PORT ${process.env.PORT}`);
+      })
+  }
+  catch (error) {
+      console.log("Error connecting to database",error)
+  }
+}
+
+startServer();
+
+
