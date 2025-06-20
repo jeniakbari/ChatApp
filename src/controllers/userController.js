@@ -76,7 +76,6 @@ const sendFriendRequest = async (req,res,next) => {
        
     } catch (error) {
         next(error);
-        console.error("Error in Sending Friend Request:", error);
     }
 }
 
@@ -132,7 +131,6 @@ const acceptFriendRequest = async (req, res, next) => {
 
     } catch (error) {
         next(error);
-        console.error("Error in Accepting Friend Request:", error);
     }
 }
 
@@ -168,7 +166,6 @@ const rejectFriendRequest = async (req, res, next) => {
 
     } catch (error) {
         next(error);
-        console.error("Error in Rejecting Friend Request:", error);
     }
 }
 
@@ -206,7 +203,6 @@ const removeFriend = async (req, res, next) => {
 
     } catch (error) {
         next(error);
-        console.error("Error in Removing Friend:", error);
     }
 }
 
@@ -249,8 +245,6 @@ const blockUser = async (req, res, next) => {
         
     } catch (error) {
         next(error);
-        console.error("Error in Blocking User:", error);
-        
     }
 }
 
@@ -285,10 +279,157 @@ const unblockUser = async (req, res, next) => {
 
     } catch (error) {
         next(error);
-        console.error("Error in Unblocking User:", error);
+    }
+}
+
+const getBlockedUsers = async (req, res, next) => {
+    try {
+        const user_id = req.user;
+
+        const blockedUsers = await BlockedUser.findAll({
+            where: {
+                user_id: user_id,
+                is_deleted: 0
+            },
+            include: [{
+                model: User,
+                as: 'BlockedPerson',
+                attributes: ['user_id', 'first_name', 'last_name', 'email'] 
+            }]
+        });
+
+        return res.status(200).json({
+            message: "Blocked users retrieved successfully",
+            blocked_users: blockedUsers
+        });
+
+    } catch (error) {
+        next(error);
+        console.error("Error in Retrieving Blocked Users:", error);
+    }
+}
+
+const getFriends = async (req, res, next) => {
+    try {
+        const user_id = req.user;
+        console.log("User ID:", user_id);
+
+        const friends = await FriendRequest.findAll({
+            where: {
+                [Op.or]: [
+                    { request_sender_id: user_id, status: 2 },
+                    { request_receiver_id: user_id, status: 2 }
+                ],
+                is_deleted: 0
+            },
+            include: [
+            {
+            model: User,
+            as: 'Sender',
+            attributes: ['user_id', 'first_name', 'last_name', 'email'],
+            include: [{
+                    model: BlockedUser,
+                    as: 'BlockedUsers',
+                    attributes: ['block_id', 'blocked_user_id'],
+                    where: {
+                        is_deleted: 0
+                    },
+                    required: false  
+                }],
+            required: false,
+            },
+            {
+                model: User,
+                as: 'Receiver',
+                attributes: ['user_id', 'first_name', 'last_name', 'email'],
+                include: [{
+                    model: BlockedUser,
+                    as: 'BlockedUsers',
+                    attributes: ['block_id', 'blocked_user_id'],
+                    where: {
+                        is_deleted: 0
+                    },
+                    required: false
+                }],
+            required: false,
+            }
+        ]
+        });
+
+        if (!friends || friends.length === 0) {
+            return res.status(404).json({ message: "No friends found" });
+        }
+
+        const finalFriends = [];
+
+        for (const friend of friends) {
+            let friendUser;
+            if (friend.request_sender_id === user_id) {
+                friendUser = friend.Receiver;
+            } else {
+                friendUser = friend.Sender;
+            }
+
+            if (!friendUser) continue;
+
+            // check blocked logic
+            const hasBlocked = friendUser.BlockedUsers?.some(blocked =>
+                (blocked.user_id === user_id && blocked.blocked_user_id === friendUser.user_id) ||
+                (blocked.user_id === friendUser.user_id && blocked.blocked_user_id === user_id)
+            );
+
+            if (!hasBlocked) {
+                finalFriends.push({
+                    user_id: friendUser.user_id,
+                    first_name: friendUser.first_name,
+                    last_name: friendUser.last_name,
+                    email: friendUser.email
+                });
+            }
+        }
+
+
+
+        return res.status(200).json({
+            message: "Friends retrieved successfully",
+            friends: finalFriends
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+const getPendingRequests = async (req, res, next) => {
+    try {
+        const user_id = req.user;
+
+        const pendingRequests = await FriendRequest.findAll({
+            where: {
+                request_receiver_id: user_id,
+                status: 1, 
+                is_deleted: 0
+            },
+            include: [{
+                model: User,
+                as: 'Sender',
+                attributes: ['user_id', 'first_name', 'last_name', 'email']
+            }]
+        });
+
+        if(!pendingRequests || pendingRequests.length === 0) {
+            return res.status(404).json({ message: "No pending friend requests found" });
+        }
+
+        return res.status(200).json({
+            message: "Pending friend requests retrieved successfully",
+            pending_requests: pendingRequests
+        });
+
+    } catch (error) {
+        next(error);
     }
 }
 
 
-
-export {sendFriendRequest,acceptFriendRequest,rejectFriendRequest,removeFriend,blockUser,unblockUser};
+export {sendFriendRequest,acceptFriendRequest,rejectFriendRequest,removeFriend,blockUser,unblockUser,getBlockedUsers,getFriends,getPendingRequests};

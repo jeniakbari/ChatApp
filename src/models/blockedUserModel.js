@@ -5,11 +5,11 @@ class BlockedUser extends Model {
     static associate(models) {
         BlockedUser.belongsTo(models.User, {
             foreignKey: 'user_id',
-            as: 'User'
+            as: 'BlockerUser'
         });
         BlockedUser.belongsTo(models.User, {
             foreignKey: 'blocked_user_id',
-            as: 'BlockedUser'
+            as: 'BlockedPerson'
         });
     }
 }
