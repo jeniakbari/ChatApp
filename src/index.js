@@ -2,6 +2,9 @@ import sequelize from './models/dbConfig.js';
 import express from "express";
 import http from 'http';
 import dotenv from 'dotenv'
+import { Server } from 'socket.io';
+import { socketConnection } from './sockets/chatSocket.js';
+
 
 // Import models
 import { User } from './models/usersModel.js';
@@ -25,28 +28,27 @@ import {router} from './routes/indexRoutes.js';
 dotenv.config();
 
 const app = express();
+
+
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer, { 
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  },
+});
+
+socketConnection(io);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(errorMiddleware);
 
-
-// Set up CORS
-// import cors from 'cors';
-// app.use(cors({
-//   origin: '*', // Allow all origins, adjust as needed
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-//   allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
-// }));
-
-       
-// Use routes
 app.use('/api', router);
-
-const httpServer = http.createServer(app);
 
 // Associate all models
 const models = {
-//   sequelize,
   User,
   ChatMessage,
   ChatRoom,
@@ -65,6 +67,7 @@ Object.values(models).forEach(model => {
     model.associate(models);
   }
 });
+
 async function startServer(){
   try {
       await sequelize.authenticate();

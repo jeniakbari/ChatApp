@@ -26,12 +26,6 @@ export const authenticate = (req, res, next) => {
 
         req.user = userId;
 
-        // You can also check expiry if you embed expiry in your token  
-        // const currentTime = Date.now();
-        // if (currentTime - parseInt(issuedAt) > 15 * 60 * 1000) { // 15 minutes
-        //     return res.status(401).json({ message: "Unauthorized: Token expired" });
-        // }
-
         next();
     } catch (err) {
         console.error("Auth middleware error:", err);

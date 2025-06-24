@@ -51,8 +51,12 @@ User.init(
             defaultValue: 0, // 0 for not verified, 1 for verified
         },
         verification_token: {
-        type: DataTypes.STRING,
-        allowNull: true
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        is_online: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0, // 0 for offline, 1 for online
         },
         created_at: {
             type: DataTypes.DATE,

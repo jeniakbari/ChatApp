@@ -158,10 +158,8 @@ const loginUser = async (req, res, next) => {
 
     const accessToken = CryptoJS.AES.encrypt(rawAccessToken, process.env.ACCESS_SECRET).toString();
     const refreshToken = CryptoJS.AES.encrypt(user.email + Date.now(), process.env.REFRESH_SECRET).toString();
-
-    const accessExp = new Date(Date.now() + 6 * 24 * 60 * 1000); // 6 days
-    // const accessExp = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-    const refreshExp = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000); // 10 days
+    const accessExp = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000); // 1 days
+    const refreshExp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
 
     await UserLoginLogs.create({
@@ -199,10 +197,19 @@ const refreshAccessToken = async (req, res, next) => {
     if (!tokenLog) {
       return res.status(401).json({ message: "Invalid or expired refresh token" });
     }
+    const user = await User.findOne({
+      where: { user_id: tokenLog.user_id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     const rawAccessToken = `${tokenLog.user_id}-${Date.now()}`;
     const newAccessToken = CryptoJS.AES.encrypt(rawAccessToken, process.env.ACCESS_SECRET).toString();
-    const newAccessExp = new Date(Date.now() + 15 * 60 * 1000);
+    const newAccessExp = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000);
+    const newrefreshToken = CryptoJS.AES.encrypt(user.email + Date.now(), process.env.REFRESH_SECRET).toString();
+    const newrefreshExp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
     await UserLoginLogs.create({
       user_id: tokenLog.user_id,
@@ -210,8 +217,8 @@ const refreshAccessToken = async (req, res, next) => {
       access_token: newAccessToken,
       access_token_expiration_datetime: newAccessExp,
       logoout_datetime: null,
-      refresh_token: tokenLog.refresh_token,
-      refresh_token_expire_datetime: tokenLog.refresh_token_expire_datetime
+      refresh_token: newrefreshToken,
+      refresh_token_expire_datetime: newrefreshExp
     });
 
     return res.status(200).json({
@@ -221,6 +228,7 @@ const refreshAccessToken = async (req, res, next) => {
 
   } catch (err) {
     next(err);
+    console.error("Error in refreshAccessToken:", err);
   }
 };
 
