@@ -134,21 +134,31 @@ const loginUser = async (req, res, next) => {
         return res.status(403).json({ message: "Please verify your email first" });
     }
 
+    const otpEn = await UserOtpLogs.findAll({
+      where : {user_id: user.user_id,
+        expired_at: {
+          [Op.gt]: new Date() // Check if the OTP is not expired
+        }
+      },
+    })
 
-    const otpEntry = await UserOtpLogs.findOne({
-      where: { user_id: user.user_id },
-      order: [["created_at", "DESC"]],
-    });
 
-    if (!otpEntry) return res.status(400).json({ message: "OTP not found" });
+    if(!otpEn || otpEn.count === 0) {
+      return res.status(400).json({ message: "OTP not found or expired." });
+    }
 
-    const isExpired = new Date() > new Date(otpEntry.expired_at);
-    if (isExpired) return res.status(400).json({ message: "OTP expired" });
+   let matchFound = false;
 
-    // const decryptedOtp = CryptoJS.AES.decrypt(otpEntry.otp, process.env.OTP_SECRET).toString(CryptoJS.enc.Utf8);
-    const isMatch = await bcrypt.compare(otp, otpEntry.otp);
+    for (const log of otpEn) {
+    const isMatch = await bcrypt.compare(otp, log.otp);
+      if (isMatch) {
+        matchFound = true;
+        break;
+      }
+    }
 
-    if (!isMatch) {
+
+    if (!matchFound) {
       user.failed_attempts += 1;
       await user.save();
       return res.status(401).json({ message: "Invalid OTP" });

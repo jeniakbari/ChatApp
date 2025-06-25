@@ -6,6 +6,7 @@ import { ChatMessageEdit } from '../models/chatMessageEditModel.js';
 import { UserLoginLogs } from '../models/userLoginLogsModel.js';
 import { User } from '../models/usersModel.js';
 import CryptoJS from 'crypto-js';
+import { Op } from 'sequelize';
 
 export const socketConnection = (io) => {
   io.on('connection', async (socket) => {
@@ -33,14 +34,17 @@ export const socketConnection = (io) => {
 
       socket.user_id = userId;
 
-      //check if token is latest
-        const tokenLog = await UserLoginLogs.findOne({
+
+      const tokenLog = await UserLoginLogs.findOne({
         where: {
           user_id: userId,
+          access_token: token,
+          access_token_expiration_datetime: {
+            [Op.gt]: new Date(),
+          },
           is_logout: 0
         },
-        order: [['created_at', 'DESC']],
-      });
+      })
      
         if (!tokenLog) {
         console.log("No valid token log found. Disconnecting...");
