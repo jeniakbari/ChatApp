@@ -11,6 +11,10 @@ class ChatMessage extends Model {
             foreignKey: 'room_id',
             as: 'Room'
         });
+        ChatMessage.hasMany(models.ChatMessageSeen, {
+                foreignKey: 'message_id',
+                as: 'SeenByDetails',
+        });
         ChatMessage.hasMany(models.ChatMessageEdit, {
         foreignKey: 'message_id',
         as: 'EditHistories',

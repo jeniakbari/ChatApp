@@ -5,8 +5,6 @@ import dotenv from 'dotenv'
 import { Server } from 'socket.io';
 import { socketConnection } from './sockets/chatSocket.js';
 
-
-// Import models
 import { User } from './models/usersModel.js';
 import { ChatMessage } from './models/chatMessageModel.js';
 import { ChatRoom } from './models/chatRoomModel.js';
@@ -18,13 +16,12 @@ import { BlockedUser } from './models/blockedUserModel.js';
 import { UserOtpLogs } from './models/userOtpLogsModel.js';
 import { UserLoginLogs } from './models/userLoginLogsModel.js';
 
-//Import middleware
+
 import { errorMiddleware } from './middleware/error-middleware.js';
 
-// Import routes
+
 import {router} from './routes/indexRoutes.js';
 
-// dotenv.config({ path: '../.env' });
 dotenv.config();
 
 const app = express();

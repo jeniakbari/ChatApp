@@ -215,7 +215,7 @@ const refreshAccessToken = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const rawAccessToken = `${tokenLog.user_id}-${Date.now()}`;
+    const rawAccessToken = `${tokenLog.user_id}##${Date.now()}`;
     const newAccessToken = CryptoJS.AES.encrypt(rawAccessToken, process.env.ACCESS_SECRET).toString();
     const newAccessExp = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000);
     const newrefreshToken = CryptoJS.AES.encrypt(user.email + Date.now(), process.env.REFRESH_SECRET).toString();
