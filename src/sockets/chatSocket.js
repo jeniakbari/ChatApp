@@ -1,6 +1,6 @@
 import { ChatMessage } from '../models/chatMessageModel.js';
 import { ChatMessageSeen } from '../models/chatMessageSeenModel.js';
-import { ChatRoom } from '../models/chatRoomModel.js';
+// import { ChatRoom } from '../models/chatRoomModel.js';
 import { ChatParticipant } from '../models/chatParticipantsModel.js';
 import { ChatMessageEdit } from '../models/chatMessageEditModel.js';
 import { UserLoginLogs } from '../models/userLoginLogsModel.js';
