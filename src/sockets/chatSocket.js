@@ -167,6 +167,38 @@ export const socketConnection = (io) => {
         });
 
       }); 
+
+      socket.on('load_messages', async ({ room_id, page = 1, limit = 20 }) => {
+
+        const offset = (page - 1) * limit;
+
+        const messages = await ChatMessage.findAndCountAll({
+          where: {
+            room_id,
+            is_deleted: 0,
+          },
+          order: [['created_at', 'DESC']], 
+          limit,
+          offset,
+        });
+
+        const totalMessages = messages.count;
+
+        const formatted = messages.map(msg => ({
+          message_id: msg.message_id,
+          user_id: msg.sender_id,
+          message: CryptoJS.AES.decrypt(msg.message, process.env.MESSAGE_SECRET).toString(CryptoJS.enc.Utf8),
+          created_at: msg.created_at,
+          is_edited: msg.is_edited,
+        }));
+
+        socket.emit('load_messages_response', {
+          messages: formatted.reverse(), 
+          page,
+          hasMore: offset + limit < totalMessages,
+        });
+     });
+
         
       socket.on('disconnect', async() => {
         console.log(`Client disconnected: ${socket.id}`);

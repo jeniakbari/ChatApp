@@ -431,5 +431,111 @@ const getPendingRequests = async (req, res, next) => {
     }
 }
 
+const getProfile = async (req, res, next) => {
+    try {
 
-export {sendFriendRequest,acceptFriendRequest,rejectFriendRequest,removeFriend,blockUser,unblockUser,getBlockedUsers,getFriends,getPendingRequests};
+        const user_id = req.user;
+
+        const userProfile = await User.findOne({
+            where: { user_id: user_id },
+            attributes: ['user_id', 'first_name', 'last_name', 'email', 'username'],
+        });
+        if (!userProfile) {
+            return res.status(404).json({ message: "User not found" });
+        }   
+        return res.status(200).json({
+            message: "User profile retrieved successfully",
+            user_profile: userProfile
+        });
+        
+    } catch (error) {
+        next(error);
+        
+    }
+}
+
+const updateProfile = async (req, res, next) => {
+    try {
+        const user_id = req.user;
+
+        let { first_name, last_name,username } = req.body;
+
+        first_name = first_name.charAt(0).toUpperCase() + first_name.slice(1).toLowerCase();
+        last_name = last_name.charAt(0).toUpperCase() + last_name.slice(1).toLowerCase();
+        username = username.trim().toLowerCase();
+
+        const userProfile = await User.findOne({ where: { user_id: user_id } });
+        if (!userProfile) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const [affectedRows] = await User.update({
+            first_name,last_name,username
+        }
+        , {
+            where: { user_id: user_id }
+        });
+        if (affectedRows === 0) {
+        return res.status(500).json({ message: "Failed to update user profile" });
+        }
+
+       
+        const updatedProfile = await User.findOne({ where: { user_id } });
+
+        return res.status(200).json({
+            message: "User profile updated successfully",
+            user_profile: updatedProfile
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+const searchUsers = async (req, res, next) => {
+    try {
+        const { search } = req.query;
+        const user_id = req.user;
+
+        if (!search || search.trim() === '') {
+            return res.status(400).json({ message: "Search query is required" });
+        }
+
+        const users = await User.findAll({
+            where: {
+                [Op.or]: [
+                    { first_name: { [Op.like]: `%${search}%` } },
+                    { last_name: { [Op.like]: `%${search}%` } },
+                    { email: { [Op.like]: `%${search}%` } }
+                ],
+                user_id: { [Op.ne]: user_id },
+                is_deleted: 0
+            },
+            attributes: ['user_id', 'first_name', 'last_name', 'email', 'username']
+        });
+
+        return res.status(200).json({
+            message: "Users retrieved successfully",
+            users: users
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+
+export {sendFriendRequest,
+        acceptFriendRequest,
+        rejectFriendRequest,
+        removeFriend,
+        blockUser,
+        unblockUser,
+        getBlockedUsers,
+        getFriends,
+        getPendingRequests,
+        getProfile,
+        updateProfile,
+        searchUsers
+        };
+

@@ -7,7 +7,6 @@ class User extends Model {
         User.hasMany(models.UserOtpLogs, { foreignKey: 'user_id' });
         User.hasMany(models.FriendRequest, { foreignKey: 'request_sender_id', as: 'SentRequests' });
         User.hasMany(models.FriendRequest, { foreignKey: 'request_receiver_id', as: 'ReceivedRequests' });
-        // User.hasMany(models.ChatRoom, { foreignKey: 'created_by', as: 'CreatedRooms' });
         User.hasMany(models.ChatMessage, { foreignKey: 'sender_id', as: 'SentMessages' });
         User.hasMany(models.BlockedUser, { foreignKey: 'user_id', as: 'BlockedUsers' });
         User.hasMany(models.BlockedUser, { foreignKey: 'blocked_user_id', as: 'BlockedByUsers' });   
@@ -32,7 +31,14 @@ User.init(
             type: DataTypes.STRING(255),
             allowNull: false, 
         },
-
+        username: {
+            type: DataTypes.STRING(255),
+            allowNull: false,
+            unique: {
+                name: 'unique_username',
+                msg: 'Username must be unique', 
+            }    
+        },
         email: {
             type: DataTypes.STRING(255),
             allowNull: false,

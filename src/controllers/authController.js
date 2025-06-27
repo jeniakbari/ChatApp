@@ -12,8 +12,12 @@ import bcrypt from 'bcrypt';
 
 const registerUser = async (req,res,next) => {
     try {
-        const { first_name, last_name, email } = req.body;
+        let { first_name, last_name, email,username } = req.body;
 
+        first_name = first_name.charAt(0).toUpperCase() + first_name.slice(1).toLowerCase();
+        last_name = last_name.charAt(0).toUpperCase() + last_name.slice(1).toLowerCase();
+        email = email.trim().toLowerCase();
+        username = username.trim().toLowerCase();
 
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser){

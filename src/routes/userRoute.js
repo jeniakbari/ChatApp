@@ -2,7 +2,7 @@ import { authenticate } from '../middleware/auth-middleware.js';
 import {Router} from 'express';
 const router = Router();
 
-import {sendFriendRequest,acceptFriendRequest,rejectFriendRequest,removeFriend,blockUser,unblockUser,getBlockedUsers,getFriends,getPendingRequests} from '../controllers/userController.js';
+import {sendFriendRequest,acceptFriendRequest,rejectFriendRequest,removeFriend,blockUser,unblockUser,getBlockedUsers,getFriends,getPendingRequests,getProfile,updateProfile,searchUsers} from '../controllers/userController.js';
 
 router.route('/send-request').post(authenticate,sendFriendRequest);
 
@@ -21,5 +21,11 @@ router.route('/blocked-users').get(authenticate,getBlockedUsers);
 router.route('/friends').get(authenticate,getFriends);
 
 router.route('/pending-requests').get(authenticate,getPendingRequests);
+
+router.route('/profile').get(authenticate,getProfile);
+
+router.route('/profile').patch(authenticate,updateProfile);
+
+router.route('/search').get(authenticate,searchUsers);
 
 export {router as userRouter};
