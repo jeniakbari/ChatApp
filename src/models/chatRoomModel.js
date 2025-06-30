@@ -15,7 +15,7 @@ class ChatRoom extends Model {
             foreignKey: 'room_id',
             as: 'Messages'
         });
-        // ChatRoom.hasMany(models.ChatParticipant, { foreignKey: 'room_id', as: 'Participants' });
+        ChatRoom.hasMany(models.ChatParticipant, { foreignKey: 'room_id', as: 'ChatParticipants' });
         ChatRoom.belongsToMany(models.User, {through: models.ChatParticipant,foreignKey: 'room_id',otherKey: 'user_id',as: 'Participants'});
     }
 }

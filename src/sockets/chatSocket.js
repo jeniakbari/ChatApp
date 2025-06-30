@@ -168,7 +168,9 @@ export const socketConnection = (io) => {
 
       }); 
 
-      socket.on('load_messages', async ({ room_id, page = 1, limit = 20 }) => {
+      socket.on('load_messages', async (data) => {
+
+        let { room_id, page = 1, limit = 20 } = data;
 
         const offset = (page - 1) * limit;
 
@@ -184,7 +186,7 @@ export const socketConnection = (io) => {
 
         const totalMessages = messages.count;
 
-        const formatted = messages.map(msg => ({
+        const formatted = messages.rows.map(msg => ({
           message_id: msg.message_id,
           user_id: msg.sender_id,
           message: CryptoJS.AES.decrypt(msg.message, process.env.MESSAGE_SECRET).toString(CryptoJS.enc.Utf8),
@@ -199,6 +201,41 @@ export const socketConnection = (io) => {
         });
      });
 
+     socket.on('delete_message', async (data) => {
+        const { message_id, room_id } = data;
+
+        const message = await ChatMessage.findByPk(message_id);
+        if (!message) {
+          console.log(`Message with ID ${message_id} not found.`);
+          return;
+        }
+
+        if (message.sender_id !== userId) {
+          console.log(`User ${userId} is not the sender of message ${message_id}. Cannot delete.`);
+          return;
+        }
+
+        await ChatMessage.update({ is_deleted: 1 }, { where: { message_id:message_id } });
+
+        io.to(room_id).emit('message_deleted', {
+          message_id: message_id,
+          user_id: userId,
+        });
+     });
+
+     socket.on('typing', (data) => {
+        const { room_id } = data;
+        socket.to(room_id).emit('user_typing', {
+          user_id: userId,
+        });
+      });
+
+      socket.on('stop_typing', (data) => {
+        const { room_id } = data;
+        socket.to(room_id).emit('user_stopped_typing', {
+          user_id: userId,
+        });
+      });
         
       socket.on('disconnect', async() => {
         console.log(`Client disconnected: ${socket.id}`);

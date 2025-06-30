@@ -1,34 +1,30 @@
 import { HttpStatusCode } from "axios";
 import dotenv from "dotenv";
 dotenv.config();
-import nodemailer from "nodemailer"
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-    service:'gmail',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    logger: true, 
-  
-  });
-  
-export const sendEmail = async (to, subject, html) => {
-  try{
+  service: "gmail",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  logger: true,
+});
 
-      
-      await transporter.sendMail({
+export const sendEmail = async (to, subject, html) => {
+  try {
+    await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to,
       subject,
-      html
+      html,
     });
 
     console.log("Email sent successfully");
-  } 
-  catch (error){
+  } catch (error) {
     console.error("Error sending email:", error);
   }
 };

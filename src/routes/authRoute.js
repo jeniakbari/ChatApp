@@ -1,19 +1,25 @@
-import {Router} from 'express';
+import { Router } from "express";
 const router = Router();
 
-import {registerUser,verifyEmail,sendOtp,loginUser,refreshAccessToken,logoutUser} from '../controllers/authController.js';
+import {
+  registerUser,
+  verifyEmail,
+  sendOtp,
+  loginUser,
+  refreshAccessToken,
+  logoutUser,
+} from "../controllers/authController.js";
 
-router.route('/register').post(registerUser);
+router.route("/register").post(registerUser);
 
-router.route('/verify/:token').get(verifyEmail);
+router.route("/verify/:token").get(verifyEmail);
 
-router.route('/send-otp').post(sendOtp)
+router.route("/send-otp").post(sendOtp);
 
-router.route('/login').post(loginUser);
+router.route("/login").post(loginUser);
 
-router.route('/refresh-token').post(refreshAccessToken);
+router.route("/refresh-token").post(refreshAccessToken);
 
-router.route('/logout').post(logoutUser);
+router.route("/logout").post(logoutUser);
 
-
-export {router as authRouter};
+export { router as authRouter };

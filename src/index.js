@@ -40,9 +40,9 @@ socketConnection(io);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(errorMiddleware);
 
 app.use('/api', router);
+app.use(errorMiddleware);
 
 // Associate all models
 const models = {
