@@ -46,8 +46,6 @@ export const socketConnection = (io) => {
           is_logout: 0
         },
       })
-
-
      
         if (!tokenLog) {
         console.log("No valid token log found. Disconnecting...");
@@ -86,6 +84,8 @@ export const socketConnection = (io) => {
         const socketsInRoom = await io.in(room_id).fetchSockets();
         const userIdsInRoom = socketsInRoom.map(s => s.user_id);
 
+        const seenByDetails = [];
+
         for (const participant of participants) {
           const receiver_id = participant.user_id;
           const isUserInRoom = userIdsInRoom.includes(receiver_id);
@@ -96,6 +96,11 @@ export const socketConnection = (io) => {
             seen_at: isUserInRoom ? new Date() : null,
           });
 
+            seenByDetails.push({
+              user_id: receiver_id,
+              seen_at: seenRecord.seen_at,
+            });
+
           console.log(`Seen status for ${receiver_id}: ${isUserInRoom ? 'SEEN' : 'UNSEEN'}`);
         } 
         io.to(room_id).emit('receive_message', {
@@ -103,6 +108,7 @@ export const socketConnection = (io) => {
           room_id: room_id,
           sender_id: userId,
           message: encryptedMessage,
+          seen_by: seenByDetails,
         });
        
       });
@@ -113,6 +119,24 @@ export const socketConnection = (io) => {
         const message = await ChatMessage.findByPk(message_id);
         if (!message) {
           console.log(`Message with ID ${message_id} not found.`);
+          return;
+        }
+        if (message.room_id !== room_id) {
+          console.log(`Message ${message_id} does not belong to room ${room_id}.`);
+          return;
+        } 
+        if(message.sender_id === userId) {
+          console.log(`Sender cannot mark their own message as seen.`);
+          return;
+        }
+        const seenRecord = await ChatMessageSeen.findOne({
+          where: {
+            message_id: message_id,
+            user_id: userId
+          }
+        });
+        if (seenRecord.seen_at!== null) {
+          console.log(`Message ${message_id} already seen by user ${userId}.`);
           return;
         }
 
