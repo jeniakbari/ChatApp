@@ -2,6 +2,7 @@ import sequelize from './models/dbConfig.js';
 import express from "express";
 import http from 'http';
 import dotenv from 'dotenv'
+import cors from 'cors';
 import { Server } from 'socket.io';
 import { socketConnection } from './sockets/chatSocket.js';
 
@@ -25,6 +26,11 @@ import {router} from './routes/indexRoutes.js';
 dotenv.config();
 
 const app = express();
+
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
 
 
 const httpServer = http.createServer(app);
