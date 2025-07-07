@@ -13,13 +13,6 @@ const registerUser = async (req, res, next) => {
   try {
     let { first_name, last_name, email, username } = req.body;
 
-    first_name =
-      first_name.charAt(0).toUpperCase() + first_name.slice(1).toLowerCase();
-    last_name =
-      last_name.charAt(0).toUpperCase() + last_name.slice(1).toLowerCase();
-    email = email.trim().toLowerCase();
-    username = username.trim().toLowerCase();
-
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
