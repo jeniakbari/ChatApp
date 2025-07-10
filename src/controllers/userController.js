@@ -457,13 +457,6 @@ const updateProfile = async (req, res, next) => {
     const user_id = req.user;
 
     let { first_name, last_name, username } = req.body;
-
-    first_name =
-      first_name.charAt(0).toUpperCase() + first_name.slice(1).toLowerCase();
-    last_name =
-      last_name.charAt(0).toUpperCase() + last_name.slice(1).toLowerCase();
-    username = username.trim().toLowerCase();
-
     const userProfile = await User.findOne({ where: { user_id: user_id } });
     if (!userProfile) {
       return res.status(404).json({ message: "User not found" });
