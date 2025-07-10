@@ -47,6 +47,10 @@ User.init(
                 msg: 'Email must be unique',
             },
         },
+        avatar_url: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         failed_attempts: {
             type: DataTypes.INTEGER,
             defaultValue: 0,
