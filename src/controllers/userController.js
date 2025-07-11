@@ -5,6 +5,8 @@ import { ChatParticipant } from "../models/chatParticipantsModel.js";
 import { BlockedUser } from "../models/blockedUserModel.js";
 import { Op } from "sequelize";
 import { ChatMessage } from "../models/chatMessageModel.js";
+// import { s3 } from '../config/aws.js'; 
+
 
 const sendFriendRequest = async (req, res, next) => {
   try {
