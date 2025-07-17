@@ -1,5 +1,6 @@
 import { authenticate } from "../middleware/auth-middleware.js";
 import { Router } from "express";
+import { uploadAvatar } from '../middleware/upload-middleware.js';
 const router = Router();
 
 import {
@@ -18,6 +19,7 @@ import {
   createGroupChat,
   getUsersAllRooms,
 } from "../controllers/userController.js";
+
 
 router.route("/send-request").post(authenticate, sendFriendRequest);
 
@@ -39,12 +41,13 @@ router.route("/pending-requests").get(authenticate, getPendingRequests);
 
 router.route("/profile").get(authenticate, getProfile);
 
-router.route("/profile").patch(authenticate, updateProfile);
+router.route("/profile").patch(authenticate, uploadAvatar.single('avatar'), updateProfile);
 
 router.route("/search").get(authenticate, searchUsers);
 
 router.route("/group-chat").post(authenticate, createGroupChat);
 
 router.route("/all-rooms").get(authenticate, getUsersAllRooms);
+
 
 export { router as userRouter };

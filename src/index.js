@@ -33,7 +33,8 @@ const app = express();
 // }));
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  res.header('Access-Control-Allow-Origin', origin);
   res.header('Access-Control-Allow-Credentials', 'true');  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -89,6 +90,7 @@ async function startServer(){
       await sequelize.authenticate();
         console.log("Database connected successfully");
       await sequelize.sync({alter:true});
+      await User.update({ is_online: 0 }, { where: {} });
       httpServer.listen(process.env.PORT,()=>{
         console.log(`Server Running on PORT ${process.env.PORT}`);
       })
@@ -99,5 +101,3 @@ async function startServer(){
 }
 
 startServer();
-
-

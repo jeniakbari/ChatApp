@@ -7,6 +7,7 @@ import { UserLoginLogs } from '../models/userLoginLogsModel.js';
 import { User } from '../models/usersModel.js';
 import CryptoJS from 'crypto-js';
 import { Op } from 'sequelize';
+import { ChatRoom } from '../models/chatRoomModel.js';
 
 
 export const socketConnection = (io) => {
@@ -100,6 +101,11 @@ export const socketConnection = (io) => {
               user_id: receiver_id,
               seen_at: seenRecord.seen_at,
             });
+
+          await ChatRoom.update(
+            {updated_at: new Date() },
+            { where: { room_id } }
+          );
 
           console.log(`Seen status for ${receiver_id}: ${isUserInRoom ? 'SEEN' : 'UNSEEN'}`);
         } 
@@ -203,7 +209,14 @@ export const socketConnection = (io) => {
             room_id,
             is_deleted: 0,
           },
-          order: [['created_at', 'DESC']], 
+          order: [['created_at', 'DESC']],
+          include:[
+            {
+              model: User,
+              as: 'Sender',
+              attributes: ['user_id','username','avatar_key'],
+            },
+          ], 
           limit,
           offset,
         });
@@ -213,6 +226,7 @@ export const socketConnection = (io) => {
         const formatted = messages.rows.map(msg => ({
           message_id: msg.message_id,
           user_id: msg.sender_id,
+          username: msg.Sender?.username,
           message: CryptoJS.AES.decrypt(msg.message, process.env.MESSAGE_SECRET).toString(CryptoJS.enc.Utf8),
           created_at: msg.created_at,
           is_edited: msg.is_edited,

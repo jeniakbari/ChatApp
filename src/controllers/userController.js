@@ -4,7 +4,7 @@ import { ChatRoom } from "../models/chatRoomModel.js";
 import { ChatParticipant } from "../models/chatParticipantsModel.js";
 import { BlockedUser } from "../models/blockedUserModel.js";
 import { Op } from "sequelize";
-import { ChatMessage } from "../models/chatMessageModel.js";
+import { getSignedUrl } from '../utility/getSignedUrl.js';
 // import { s3 } from '../config/aws.js'; 
 
 
@@ -437,14 +437,20 @@ const getPendingRequests = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const user_id = req.user;
-
-    const userProfile = await User.findOne({
+    let userProfile = await User.findOne({
       where: { user_id: user_id },
-      attributes: ["user_id", "first_name", "last_name", "email", "username"],
+      attributes: ["user_id", "first_name", "last_name", "email", "username","avatar_key"],
+      raw: true,
     });
+    
+
     if (!userProfile) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    const avatarUrl = userProfile.avatar_key ? await getSignedUrl(userProfile.avatar_key) : null;
+    userProfile.avatar_url = avatarUrl;
+
     return res.status(200).json({
       message: "User profile retrieved successfully",
       user_profile: userProfile,
@@ -459,35 +465,38 @@ const updateProfile = async (req, res, next) => {
     const user_id = req.user;
 
     let { first_name, last_name, username } = req.body;
+    const avatarKey = req.file ? req.file.key : null;
+
     const userProfile = await User.findOne({ where: { user_id: user_id } });
     if (!userProfile) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const [affectedRows] = await User.update(
-      {
-        first_name,
-        last_name,
-        username,
-      },
-      {
-        where: { user_id: user_id },
-      }
-    );
+    const updateData = {
+      first_name,
+      last_name,
+      username,
+    };
+
+    if (avatarKey) updateData.avatar_key = avatarKey;
+
+    const [affectedRows] = await User.update(updateData, {
+      where: { user_id },
+    });
+
     if (affectedRows === 0) {
       return res.status(500).json({ message: "Failed to update user profile" });
     }
 
-    const updatedProfile = await User.findOne({ where: { user_id } });
 
     return res.status(200).json({
       message: "User profile updated successfully",
-      user_profile: updatedProfile,
     });
   } catch (error) {
     next(error);
   }
 };
+
 
 const searchUsers = async (req, res, next) => {
   try {
@@ -559,9 +568,72 @@ const createGroupChat = async (req, res, next) => {
   }
 };
 
+// const getUsersAllRooms = async (req, res, next) => {
+//   try {
+//     const user_id = req.user;
+
+//     const chatRooms = await ChatRoom.findAll({
+//       include: [
+//         {
+//           model: ChatParticipant,
+//           as: "ChatParticipants",
+//           where: { user_id },
+//           attributes: [], 
+//         },
+//         {
+//           model: User,
+//           as: "Participants", 
+//           attributes: ["user_id", "first_name", "last_name","username", "avatar_key","email"],
+//           through: { attributes: [] }, 
+//         },
+
+//       ],
+//     });
+
+//     if (!chatRooms || chatRooms.length === 0) {
+//       return res.status(404).json({ message: "No chat rooms found" });
+//     }
+
+//     const formattedRooms = chatRooms.map(room => {
+//       const isGroup = room.room_type === 2;
+//       let displayName;
+
+//       if (isGroup) {
+//         displayName = room.room_name;
+//       } else {
+        
+//         const friend = room.Participants.find(p => p.user_id !== user_id);
+//         if (friend) {
+//           displayName = friend.username;
+//         } else {
+//           displayName = "Unknown";
+//         }
+//       }
+
+//       return {
+//         room_id: room.room_id,
+//         room_type: room.room_type,
+//         room_name: displayName,
+//         created_at: room.created_at,
+//         updated_at: room.updated_at,
+//       };
+//     });
+
+//     return res.status(200).json({
+//       message: "Chat rooms retrieved successfully",
+//       chat_rooms: formattedRooms,
+//     });
+
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const getUsersAllRooms = async (req, res, next) => {
   try {
     const user_id = req.user;
+    let {page = 1, limit = 10 } = req.body;
+    const offset = (page - 1) * limit;
 
     const chatRooms = await ChatRoom.findAll({
       include: [
@@ -574,51 +646,57 @@ const getUsersAllRooms = async (req, res, next) => {
         {
           model: User,
           as: "Participants", 
-          attributes: ["user_id", "first_name", "last_name","username", "email"],
+          attributes: ["user_id", "first_name", "last_name","username", "avatar_key","email"],
           through: { attributes: [] }, 
         },
 
       ],
+      order: [['updated_at', 'DESC']],
+      limit,
+      offset,
     });
 
     if (!chatRooms || chatRooms.length === 0) {
       return res.status(404).json({ message: "No chat rooms found" });
     }
+    const formattedRooms = [];
 
-    const formattedRooms = chatRooms.map(room => {
+    for (const room of chatRooms) {
       const isGroup = room.room_type === 2;
-      let displayName;
+      let displayName = room.room_name;
+      let avatarUrl = null;
 
-      if (isGroup) {
-        displayName = room.room_name;
-      } else {
-        
+      if (!isGroup) {
         const friend = room.Participants.find(p => p.user_id !== user_id);
         if (friend) {
-          displayName = friend.username;
-        } else {
-          displayName = "Unknown";
+          displayName = friend.username || `${friend.first_name} ${friend.last_name}`.trim();
+          avatarUrl = friend.avatar_key ? await getSignedUrl(friend.avatar_key) : null;
         }
       }
 
-      return {
+      formattedRooms.push({
         room_id: room.room_id,
         room_type: room.room_type,
         room_name: displayName,
+        avatar_url: avatarUrl,
         created_at: room.created_at,
         updated_at: room.updated_at,
-      };
-    });
+      });
+    }
 
     return res.status(200).json({
       message: "Chat rooms retrieved successfully",
       chat_rooms: formattedRooms,
+      page,
+      hasMore: chatRooms.length === limit,
     });
 
   } catch (error) {
     next(error);
   }
 };
+
+
 
 export {
   sendFriendRequest,
@@ -634,5 +712,5 @@ export {
   updateProfile,
   searchUsers,
   createGroupChat,
-  getUsersAllRooms
+  getUsersAllRooms,
 };

@@ -12,6 +12,9 @@ import bcrypt from "bcrypt";
 const registerUser = async (req, res, next) => {
   try {
     let { first_name, last_name, email, username } = req.body;
+    const avatarKey = req.file ? req.file.key : null;
+
+    
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
@@ -34,6 +37,7 @@ const registerUser = async (req, res, next) => {
       username,
       email,
       verification_token: token,
+      avatar_key: avatarKey,
     });
 
     const verifyLink = `http://localhost:8080/api/auth/verify/${token}`;
@@ -53,8 +57,11 @@ const registerUser = async (req, res, next) => {
         user_id: newUser.user_id,
         first_name: newUser.first_name,
         last_name: newUser.last_name,
+        username: newUser.username,
         email: newUser.email,
+        avatar_key: newUser.avatar_key,
         token: newUser.verification_token,
+
       },
     });
   } catch (error) {
@@ -93,7 +100,7 @@ const sendOtp = async (req, res, next) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const rawOtp = generateAlphanumericOTP();
-    // const encryptedOtp = CryptoJS.AES.encrypt(rawOtp, process.env.OTP_SECRET).toString();
+    
     const encryptedOtp = await bcrypt.hash(rawOtp, 10);
 
     const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry

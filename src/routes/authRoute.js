@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { uploadAvatar } from '../middleware/upload-middleware.js';
 const router = Router();
 
 import {
@@ -10,7 +11,7 @@ import {
   logoutUser,
 } from "../controllers/authController.js";
 
-router.route("/register").post(registerUser);
+router.route("/register").post(uploadAvatar.single('avatar'), registerUser);
 
 router.route("/verify/:token").get(verifyEmail);
 
