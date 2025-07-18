@@ -8,6 +8,7 @@ import { User } from '../models/usersModel.js';
 import CryptoJS from 'crypto-js';
 import { Op } from 'sequelize';
 import { ChatRoom } from '../models/chatRoomModel.js';
+import { MessageReaction } from '../models/messageReactionModel.js';
 
 
 export const socketConnection = (io) => {
@@ -261,19 +262,74 @@ export const socketConnection = (io) => {
         });
      });
 
-     socket.on('typing', (data) => {
+     socket.on('typing',async (data) => {
         const { room_id } = data;
         socket.to(room_id).emit('user_typing', {
           user_id: userId,
         });
       });
 
-      socket.on('stop_typing', (data) => {
+      socket.on('stop_typing',async (data) => {
         const { room_id } = data;
         socket.to(room_id).emit('user_stopped_typing', {
           user_id: userId,
         });
       });
+
+      socket.on('send_reaction', async (data) => {
+        const { message_id, emoji } = data;
+
+        const user_id = socket.user_id;
+
+        const [reaction,created] = await MessageReaction.findOrCreate({
+          where: {
+            message_id: message_id,
+            user_id: user_id,
+          },
+          defaults: {
+            emoji: emoji,
+          }
+        });
+
+        if (!created) {
+          reaction.emoji = emoji;
+          await reaction.save();
+        }
+
+        io.to(room_id).emit('message_reacted', {
+          message_id,
+          user_id,
+          emoji,
+        });
+        
+      });
+
+      socket.on('remove_reaction',async(data)=>{
+        const { message_id, emoji } = data;
+
+        const user_id = socket.user_id;
+
+        const reaction = await MessageReaction.findOne({
+          where: {
+            message_id: message_id,
+            user_id: user_id,
+            emoji: emoji,
+          }
+        });
+
+        if (!reaction) {
+          console.log(`No reaction found for message ${message_id} by user ${user_id}`);
+          return;
+        }
+
+        await reaction.destroy();
+
+        io.to(room_id).emit('reaction_removed', {
+          message_id,
+          user_id,
+          emoji,
+        });
+      })
         
       socket.on('disconnect', async() => {
         console.log(`Client disconnected: ${socket.id}`);

@@ -16,6 +16,7 @@ import { FriendRequest } from './models/friendRequestModel.js';
 import { BlockedUser } from './models/blockedUserModel.js';
 import { UserOtpLogs } from './models/userOtpLogsModel.js';
 import { UserLoginLogs } from './models/userLoginLogsModel.js';
+import {MessageReaction} from './models/messageReactionModel.js';
 
 
 import { errorMiddleware } from './middleware/error-middleware.js';
@@ -76,6 +77,7 @@ const models = {
   BlockedUser,
   UserOtpLogs,
   UserLoginLogs,
+  MessageReaction
 };
 
 // Initialize associations

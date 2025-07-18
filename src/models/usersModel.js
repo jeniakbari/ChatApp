@@ -10,7 +10,8 @@ class User extends Model {
         User.hasMany(models.ChatMessage, { foreignKey: 'sender_id', as: 'SentMessages' });
         User.hasMany(models.BlockedUser, { foreignKey: 'user_id', as: 'BlockedUsers' });
         User.hasMany(models.BlockedUser, { foreignKey: 'blocked_user_id', as: 'BlockedByUsers' });   
-        User.belongsToMany(models.ChatRoom, {through: models.ChatParticipant,foreignKey: 'user_id',otherKey: 'room_id', as: 'ChatRooms'});     
+        User.belongsToMany(models.ChatRoom, {through: models.ChatParticipant,foreignKey: 'user_id',otherKey: 'room_id', as: 'ChatRooms'});
+        User.hasMany(models.MessageReaction, { foreignKey: 'user_id' });     
     }
 }
 

@@ -696,6 +696,36 @@ const getUsersAllRooms = async (req, res, next) => {
   }
 };
 
+const getUserById = async (req,res,next) => {
+  try {
+
+    const id = req.body.user_id;
+    if (!id) {
+      throw new Error("User ID is required");
+    }
+
+    const user = await User.findOne({
+      where: { user_id: id },
+      attributes: ["user_id", "first_name", "last_name", "email", "username", "avatar_key"],
+    }); 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const avatarUrl = user.avatar_key ? await getSignedUrl(user.avatar_key) : null;
+
+    return res.status(200).json({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      username: user.username,
+      avatar_url: avatarUrl,    
+    });
+    
+  } catch (error) {
+    next(error);
+  }
+}
+
 
 
 export {
@@ -713,4 +743,5 @@ export {
   searchUsers,
   createGroupChat,
   getUsersAllRooms,
+  getUserById
 };

@@ -16,9 +16,13 @@ class ChatMessage extends Model {
                 as: 'SeenByDetails',
         });
         ChatMessage.hasMany(models.ChatMessageEdit, {
-        foreignKey: 'message_id',
-        as: 'EditHistories',
-});
+            foreignKey: 'message_id',
+            as: 'EditHistories',
+        });
+        ChatMessage.hasMany(models.MessageReaction, {
+            foreignKey: 'message_id',
+            as: 'Reactions',
+        });
 
 }
 }

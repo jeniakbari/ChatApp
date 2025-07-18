@@ -18,6 +18,7 @@ import {
   searchUsers,
   createGroupChat,
   getUsersAllRooms,
+  getUserById
 } from "../controllers/userController.js";
 
 
@@ -48,6 +49,8 @@ router.route("/search").get(authenticate, searchUsers);
 router.route("/group-chat").post(authenticate, createGroupChat);
 
 router.route("/all-rooms").get(authenticate, getUsersAllRooms);
+
+router.route("/id").get(getUserById);
 
 
 export { router as userRouter };
