@@ -70,9 +70,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password) => {
+  const register = async (first_name, last_name, username, email) => {
     try {
-      const response = await authAPI.register(email, password);
+      const response = await authAPI.register(first_name, last_name, username, email);
       toast.success('Registration successful! Please verify your email.');
       return response.data;
     } catch (error) {
