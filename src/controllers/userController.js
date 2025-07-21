@@ -555,7 +555,7 @@ const searchFriends = async (req, res,next) =>{
             [Op.or]: [
               { first_name: { [Op.like]: `%${search}%` } },
               { last_name: { [Op.like]: `%${search}%` } },
-              { email: { [Op.like]: `%${search}%` } },
+              { username: { [Op.like]: `%${search}%` } },
             ],
             user_id: { [Op.ne]: user_id },
           },
@@ -568,13 +568,15 @@ const searchFriends = async (req, res,next) =>{
             [Op.or]: [
               { first_name: { [Op.like]: `%${search}%` } },
               { last_name: { [Op.like]: `%${search}%` } },
-              { email: { [Op.like]: `%${search}%` } },
+              { username: { [Op.like]: `%${search}%` } },
             ],
             user_id: { [Op.ne]: user_id },
           },
         },
       ],
     });
+
+    console.log("Friends found:", friends);
 
     if (!friends || friends.length === 0) {
       return res.status(404).json({ message: "No friends found" });
