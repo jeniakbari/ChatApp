@@ -16,6 +16,7 @@ import {
   getProfile,
   updateProfile,
   searchUsers,
+  searchFriends,
   createGroupChat,
   getUsersAllRooms,
   getUserById
@@ -46,11 +47,17 @@ router.route("/profile").patch(authenticate, uploadAvatar.single('avatar'), upda
 
 router.route("/search").get(authenticate, searchUsers);
 
+router.route("/search-friends").get(authenticate, searchFriends);
+
 router.route("/group-chat").post(authenticate, createGroupChat);
 
 router.route("/all-rooms").get(authenticate, getUsersAllRooms);
 
 router.route("/id").get(getUserById);
+
+router.get("/test", (req, res) => {
+  return res.send("✅ User route working!");
+});
 
 
 export { router as userRouter };

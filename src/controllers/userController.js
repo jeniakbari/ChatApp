@@ -529,6 +529,69 @@ const searchUsers = async (req, res, next) => {
   }
 };
 
+const searchFriends = async (req, res,next) =>{
+  try {
+    const { search } = req.query;
+    const user_id = req.user;
+
+    if (!search || search.trim() === "") {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const friends = await FriendRequest.findAll({
+      where: {
+        [Op.or]: [
+          { request_sender_id: user_id, status: 2 },
+          { request_receiver_id: user_id, status: 2 },
+        ],
+        is_deleted: 0,
+      },
+      include: [
+        {
+          model: User,
+          as: "Sender",
+          attributes: ["user_id", "first_name", "last_name", "email", "username"],
+          where: {
+            [Op.or]: [
+              { first_name: { [Op.like]: `%${search}%` } },
+              { last_name: { [Op.like]: `%${search}%` } },
+              { email: { [Op.like]: `%${search}%` } },
+            ],
+            user_id: { [Op.ne]: user_id },
+          },
+        },
+        {
+          model: User,
+          as: "Receiver",
+          attributes: ["user_id", "first_name", "last_name", "email", "username"],
+          where: {
+            [Op.or]: [
+              { first_name: { [Op.like]: `%${search}%` } },
+              { last_name: { [Op.like]: `%${search}%` } },
+              { email: { [Op.like]: `%${search}%` } },
+            ],
+            user_id: { [Op.ne]: user_id },
+          },
+        },
+      ],
+    });
+
+    if (!friends || friends.length === 0) {
+      return res.status(404).json({ message: "No friends found" });
+    }
+
+    return res.status(200).json({
+      message: "Friends retrieved successfully",
+      friends,
+    });
+    
+  } catch (error) {
+    next(error);
+    console.log("Error in Searching Friends:", error);
+    
+  }
+}
+
 const createGroupChat = async (req, res, next) => {
   try {
     const { room_name, user_ids } = req.body;
@@ -741,6 +804,7 @@ export {
   getProfile,
   updateProfile,
   searchUsers,
+  searchFriends,
   createGroupChat,
   getUsersAllRooms,
   getUserById
