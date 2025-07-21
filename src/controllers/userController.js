@@ -623,72 +623,9 @@ const createGroupChat = async (req, res, next) => {
   }
 };
 
-const getUsersAllRooms = async (req, res, next) => {
-  try {
-    const user_id = req.user;
-
-    const chatRooms = await ChatRoom.findAll({
-      include: [
-        {
-          model: ChatParticipant,
-          as: "ChatParticipants",
-          where: { user_id },
-          attributes: [], 
-        },
-        {
-          model: User,
-          as: "Participants", 
-          attributes: ["user_id", "first_name", "last_name","username", "email"],
-          through: { attributes: [] }, 
-        },
-
-      ],
-    });
-
-    if (!chatRooms || chatRooms.length === 0) {
-      return res.status(404).json({ message: "No chat rooms found" });
-    }
-
-    const formattedRooms = chatRooms.map(room => {
-      const isGroup = room.room_type === 2;
-      let displayName;
-
-      if (isGroup) {
-        displayName = room.room_name;
-      } else {
-        
-        const friend = room.Participants.find(p => p.user_id !== user_id);
-        if (friend) {
-          displayName = friend.username;
-        } else {
-          displayName = "Unknown";
-        }
-      }
-
-      return {
-        room_id: room.room_id,
-        room_type: room.room_type,
-        room_name: displayName,
-        created_at: room.created_at,
-        updated_at: room.updated_at,
-      };
-    });
-
-    return res.status(200).json({
-      message: "Chat rooms retrieved successfully",
-      chat_rooms: formattedRooms,
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
 // const getUsersAllRooms = async (req, res, next) => {
 //   try {
 //     const user_id = req.user;
-//     let {page = 1, limit = 10 } = req.body;
-//     const offset = (page - 1) * limit;
 
 //     const chatRooms = await ChatRoom.findAll({
 //       include: [
@@ -701,55 +638,118 @@ const getUsersAllRooms = async (req, res, next) => {
 //         {
 //           model: User,
 //           as: "Participants", 
-//           attributes: ["user_id", "first_name", "last_name","username", "avatar_key","email"],
+//           attributes: ["user_id", "first_name", "last_name","username", "email"],
 //           through: { attributes: [] }, 
 //         },
 
 //       ],
-//       order: [['updated_at', 'DESC']],
-//       limit,
-//       offset,
 //     });
 
 //     if (!chatRooms || chatRooms.length === 0) {
 //       return res.status(404).json({ message: "No chat rooms found" });
 //     }
-//     const formattedRooms = [];
 
-//     for (const room of chatRooms) {
+//     const formattedRooms = chatRooms.map(room => {
 //       const isGroup = room.room_type === 2;
-//       let displayName = room.room_name;
-//       let avatarUrl = null;
+//       let displayName;
 
-//       if (!isGroup) {
+//       if (isGroup) {
+//         displayName = room.room_name;
+//       } else {
+        
 //         const friend = room.Participants.find(p => p.user_id !== user_id);
 //         if (friend) {
-//           displayName = friend.username || `${friend.first_name} ${friend.last_name}`.trim();
-//           avatarUrl = friend.avatar_key ? await getSignedUrl(friend.avatar_key) : null;
+//           displayName = friend.username;
+//         } else {
+//           displayName = "Unknown";
 //         }
 //       }
 
-//       formattedRooms.push({
+//       return {
 //         room_id: room.room_id,
 //         room_type: room.room_type,
 //         room_name: displayName,
-//         avatar_url: avatarUrl,
 //         created_at: room.created_at,
 //         updated_at: room.updated_at,
-//       });
-//     }
+//       };
+//     });
 
 //     return res.status(200).json({
 //       message: "Chat rooms retrieved successfully",
 //       chat_rooms: formattedRooms,
-//       page,
-//       hasMore: chatRooms.length === limit,
 //     });
 
 //   } catch (error) {
 //     next(error);
 //   }
 // };
+
+const getUsersAllRooms = async (req, res, next) => {
+  try {
+    const user_id = req.user;
+    let {page = 1, limit = 10 } = req.body;
+    const offset = (page - 1) * limit;
+
+    const chatRooms = await ChatRoom.findAll({
+      include: [
+        {
+          model: ChatParticipant,
+          as: "ChatParticipants",
+          where: { user_id },
+          attributes: [], 
+        },
+        {
+          model: User,
+          as: "Participants", 
+          attributes: ["user_id", "first_name", "last_name","username", "avatar_key","email"],
+          through: { attributes: [] }, 
+        },
+
+      ],
+      order: [['updated_at', 'DESC']],
+      limit,
+      offset,
+    });
+
+    if (!chatRooms || chatRooms.length === 0) {
+      return res.status(404).json({ message: "No chat rooms found" });
+    }
+    const formattedRooms = [];
+
+    for (const room of chatRooms) {
+      const isGroup = room.room_type === 2;
+      let displayName = room.room_name;
+      let avatarUrl = null;
+
+      if (!isGroup) {
+        const friend = room.Participants.find(p => p.user_id !== user_id);
+        if (friend) {
+          displayName = friend.username || `${friend.first_name} ${friend.last_name}`.trim();
+          avatarUrl = friend.avatar_key ? await getSignedUrl(friend.avatar_key) : null;
+        }
+      }
+
+      formattedRooms.push({
+        room_id: room.room_id,
+        room_type: room.room_type,
+        room_name: displayName,
+        avatar_url: avatarUrl,
+        created_at: room.created_at,
+        updated_at: room.updated_at,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Chat rooms retrieved successfully",
+      chat_rooms: formattedRooms,
+      page,
+      hasMore: chatRooms.length === limit,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getUserById = async (req,res,next) => {
   try {
