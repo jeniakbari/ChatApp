@@ -545,33 +545,27 @@ const searchFriends = async (req, res,next) =>{
           { request_receiver_id: user_id, status: 2 },
         ],
         is_deleted: 0,
+        [Op.or]: [
+          { '$Sender.first_name$': { [Op.like]: `%${search}%` } },
+          { '$Sender.last_name$': { [Op.like]: `%${search}%` } },
+          { '$Sender.username$': { [Op.like]: `%${search}%` } },
+          { '$Receiver.first_name$': { [Op.like]: `%${search}%` } },
+          { '$Receiver.last_name$': { [Op.like]: `%${search}%` } },
+          { '$Receiver.username$': { [Op.like]: `%${search}%` } },
+        ]
       },
       include: [
         {
           model: User,
           as: "Sender",
           attributes: ["user_id", "first_name", "last_name", "email", "username"],
-          where: {
-            [Op.or]: [
-              { first_name: { [Op.like]: `%${search}%` } },
-              { last_name: { [Op.like]: `%${search}%` } },
-              { username: { [Op.like]: `%${search}%` } },
-            ],
-            user_id: { [Op.ne]: user_id },
-          },
+          required: false,
         },
         {
           model: User,
           as: "Receiver",
           attributes: ["user_id", "first_name", "last_name", "email", "username"],
-          where: {
-            [Op.or]: [
-              { first_name: { [Op.like]: `%${search}%` } },
-              { last_name: { [Op.like]: `%${search}%` } },
-              { username: { [Op.like]: `%${search}%` } },
-            ],
-            user_id: { [Op.ne]: user_id },
-          },
+          required: false,
         },
       ],
     });
