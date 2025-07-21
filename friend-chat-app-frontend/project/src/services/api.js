@@ -14,7 +14,8 @@ const api = axios.create({
 // Request interceptor to add token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const userObj = JSON.parse(localStorage.getItem('user') || 'null');
+    const token = userObj?.access_token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,31 +27,31 @@ api.interceptors.request.use(
 );
 
 // Response interceptor to handle token refresh
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+// api.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+//     if (error.response?.status === 401 && !originalRequest._retry) {
+//       originalRequest._retry = true;
 
-      try {
-        const response = await api.post('/auth/refresh');
-        const { accessToken } = response.data;
-        localStorage.setItem('accessToken', accessToken);
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
-    }
+//       try {
+//         const response = await api.post('/auth/refresh');
+//         const { accessToken } = response.data;
+//         localStorage.setItem('accessToken', accessToken);
+//         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+//         return api(originalRequest);
+//       } catch (refreshError) {
+//         localStorage.removeItem('accessToken');
+//         localStorage.removeItem('user');
+//         window.location.href = '/login';
+//         return Promise.reject(refreshError);
+//       }
+//     }
 
-    return Promise.reject(error);
-  }
-);
+//     return Promise.reject(error);
+//   }
+// );
 
 // Auth API calls
 export const authAPI = {
@@ -65,9 +66,15 @@ export const authAPI = {
 
 // User API calls
 export const userAPI = {
-  getProfile: () => api.get('/user/profile'),
-  updateProfile: (data) => api.put('/user/profile', data),
-  searchUsers: (query) => api.get(`/user/search?q=${query}`),
+  getProfile: () => api.get('api/user/profile'),
+  updateProfile: (data) => api.patch('api/user/profile', data),
+  searchUsers: (query, token) => api.get(`api/user/search?search=${query}`
+    
+    , {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }),
   getUsers: () => api.get('/user/all'),
 };
 

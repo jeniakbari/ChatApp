@@ -15,6 +15,8 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
     username: '',
     email: '',
     bio: '',
@@ -22,14 +24,32 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        username: user.username || '',
-        email: user.email || '',
-        bio: user.bio || '',
-        avatar: user.avatar || '',
-      });
-    }
+    const fetchProfile = async () => {
+      try {
+        const response = await userAPI.getProfile();
+        const profile = response.data.user_profile;
+        setFormData(prev => ({
+          ...prev,
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          username: profile.username || '',
+          email: profile.email || '',
+          avatar: profile.avatar || '',
+        }));
+      } catch (error) {
+        // fallback to user context if API fails
+        if (user) {
+          setFormData(prev => ({
+            ...prev,
+            username: user.username || '',
+            email: user.email || '',
+            bio: user.bio || '',
+            avatar: user.avatar || '',
+          }));
+        }
+      }
+    };
+    fetchProfile();
   }, [user]);
 
   const handleChange = (e) => {
@@ -104,7 +124,7 @@ const Profile = () => {
               </div>
               
               <h2 className="text-xl font-semibold text-white mb-1">
-                {formData.username}
+                {formData.first_name} {formData.last_name} {formData.username && `(@${formData.username})`}
               </h2>
               <p className="text-gray-400 mb-4">{formData.email}</p>
               
@@ -132,6 +152,34 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
+                      First Name
+                    </label>
+                    <Input
+                      type="text"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter your first name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Last Name
+                    </label>
+                    <Input
+                      type="text"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      placeholder="Enter your last name"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Username
                     </label>
                     <Input
@@ -143,7 +191,6 @@ const Profile = () => {
                       placeholder="Enter your username"
                     />
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Email

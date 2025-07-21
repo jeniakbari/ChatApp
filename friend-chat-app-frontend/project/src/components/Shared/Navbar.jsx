@@ -5,11 +5,26 @@ import { MessageCircle, LogOut, User, Users, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from './Avatar';
 import Button from './Button';
+import { userAPI } from '../../services/api';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [profile, setProfile] = React.useState(null);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await userAPI.getProfile();
+        setProfile(response.data.user_profile);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -70,13 +85,13 @@ const Navbar = () => {
           <div className="flex items-center space-x-3">
             <Avatar
               src={user?.avatar}
-              alt={user?.username}
+              alt={profile?.username || user?.username}
               size="md"
               onClick={() => navigate('/profile')}
             />
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-white">{user?.username}</p>
-              <p className="text-xs text-gray-400">{user?.email}</p>
+              <p className="text-sm font-medium text-white">{profile ? `${profile.first_name} ${profile.last_name}` : user?.username}</p>
+              <p className="text-xs text-gray-400">{profile?.email || user?.email}</p>
             </div>
           </div>
           <Button

@@ -40,8 +40,8 @@ const Dashboard = () => {
 
   const fetchChats = async () => {
     try {
-      const response = await chatAPI.getChats();
-      setChats(response.data);
+      // const response = await chatAPI.getChats();
+      // setChats(response.data);
     } catch (error) {
       console.error('Error fetching chats:', error);
     } finally {
@@ -49,10 +49,17 @@ const Dashboard = () => {
     }
   };
 
+  
   const searchUsers = async () => {
     setSearchLoading(true);
     try {
-      const response = await userAPI.searchUsers(searchQuery);
+      const userObj = JSON.parse(localStorage.getItem('user'));
+      const accessToken = userObj?.access_token;
+      console.log('accessToken:', accessToken);
+      if (!accessToken) {
+        console.warn('No accessToken found in localStorage user object! Authorization header will not be set.');
+      }
+      const response = await userAPI.searchUsers(searchQuery, accessToken);
       setSearchResults(response.data);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -61,38 +68,38 @@ const Dashboard = () => {
     }
   };
 
-  const handleChatClick = (chat) => {
-    navigate(`/chat/${chat.id}`);
-  };
+  // const handleChatClick = (chat) => {
+  //   navigate(`/chat/${chat.id}`);
+  // };
 
-  const handleUserClick = (selectedUser) => {
-    // Find existing chat or create new one
-    const existingChat = chats.find(chat => 
-      chat.type === 'private' && 
-      chat.participants.some(p => p.id === selectedUser.id)
-    );
+  // const handleUserClick = (selectedUser) => {
+  //   // Find existing chat or create new one
+  //   const existingChat = chats.find(chat => 
+  //     chat.type === 'private' && 
+  //     chat.participants.some(p => p.id === selectedUser.id)
+  //   );
 
-    if (existingChat) {
-      navigate(`/chat/${existingChat.id}`);
-    } else {
-      // Navigate to chat with user info to create new chat
-      navigate(`/chat/new`, { state: { user: selectedUser } });
-    }
-    setSearchQuery('');
-    setSearchResults([]);
-  };
+  //   if (existingChat) {
+  //     navigate(`/chat/${existingChat.id}`);
+  //   } else {
+  //     // Navigate to chat with user info to create new chat
+  //     navigate(`/chat/new`, { state: { user: selectedUser } });
+  //   }
+  //   setSearchQuery('');
+  //   setSearchResults([]);
+  // };
 
-  const formatLastMessage = (message) => {
-    if (!message) return 'No messages yet';
+  // const formatLastMessage = (message) => {
+  //   if (!message) return 'No messages yet';
     
-    const isOwn = message.sender.id === user.id;
-    const prefix = isOwn ? 'You: ' : `${message.sender.username}: `;
-    const content = message.content.length > 50 
-      ? message.content.substring(0, 50) + '...' 
-      : message.content;
+  //   const isOwn = message.sender.id === user.id;
+  //   const prefix = isOwn ? 'You: ' : `${message.sender.username}: `;
+  //   const content = message.content.length > 50 
+  //     ? message.content.substring(0, 50) + '...' 
+  //     : message.content;
     
-    return prefix + content;
-  };
+  //   return prefix + content;
+  // };
 
   if (loading) {
     return (

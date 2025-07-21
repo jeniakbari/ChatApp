@@ -95,7 +95,9 @@ const Login = () => {
 
     setLoading(true);
     try {
-      await loginWithOtp(email, otp);
+      const response = await loginWithOtp(email, otp);
+      // Store the full response in localStorage as 'user'
+      localStorage.setItem('user', JSON.stringify(response));
       navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
