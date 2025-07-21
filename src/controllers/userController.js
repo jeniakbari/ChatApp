@@ -623,67 +623,6 @@ const createGroupChat = async (req, res, next) => {
   }
 };
 
-// const getUsersAllRooms = async (req, res, next) => {
-//   try {
-//     const user_id = req.user;
-
-//     const chatRooms = await ChatRoom.findAll({
-//       include: [
-//         {
-//           model: ChatParticipant,
-//           as: "ChatParticipants",
-//           where: { user_id },
-//           attributes: [], 
-//         },
-//         {
-//           model: User,
-//           as: "Participants", 
-//           attributes: ["user_id", "first_name", "last_name","username", "email"],
-//           through: { attributes: [] }, 
-//         },
-
-//       ],
-//     });
-
-//     if (!chatRooms || chatRooms.length === 0) {
-//       return res.status(404).json({ message: "No chat rooms found" });
-//     }
-
-//     const formattedRooms = chatRooms.map(room => {
-//       const isGroup = room.room_type === 2;
-//       let displayName;
-
-//       if (isGroup) {
-//         displayName = room.room_name;
-//       } else {
-        
-//         const friend = room.Participants.find(p => p.user_id !== user_id);
-//         if (friend) {
-//           displayName = friend.username;
-//         } else {
-//           displayName = "Unknown";
-//         }
-//       }
-
-//       return {
-//         room_id: room.room_id,
-//         room_type: room.room_type,
-//         room_name: displayName,
-//         created_at: room.created_at,
-//         updated_at: room.updated_at,
-//       };
-//     });
-
-//     return res.status(200).json({
-//       message: "Chat rooms retrieved successfully",
-//       chat_rooms: formattedRooms,
-//     });
-
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 const getUsersAllRooms = async (req, res, next) => {
   try {
     const user_id = req.user;
