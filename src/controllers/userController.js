@@ -578,15 +578,24 @@ const searchFriends = async (req, res,next) =>{
       ],
     });
 
-    console.log("Friends found:", friends);
+    const matchedFriends = [];
 
-    if (!friends || friends.length === 0) {
+    for (const fr of friends) {
+      const otherUser =
+        fr.request_sender_id === user_id ? fr.Receiver : fr.Sender;
+
+      if (!otherUser) continue;
+
+      matchedFriends.push(otherUser);
+    }
+
+    if (matchedFriends.length === 0) {
       return res.status(404).json({ message: "No friends found" });
     }
 
     return res.status(200).json({
       message: "Friends retrieved successfully",
-      friends,
+      friends: matchedFriends,
     });
     
   } catch (error) {
