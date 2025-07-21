@@ -529,81 +529,135 @@ const searchUsers = async (req, res, next) => {
   }
 };
 
-const searchFriends = async (req, res,next) =>{
+// const searchFriends = async (req, res,next) =>{
+//   try {
+//     const { search } = req.query;
+//     const user_id = req.user;
+
+//     if (!search || search.trim() === "") {
+//       return res.status(400).json({ message: "Search query is required" });
+//     }
+
+//     const friends = await FriendRequest.findAll({
+//       where: {
+//         [Op.or]: [
+//           { request_sender_id: user_id, status: 2 },
+//           { request_receiver_id: user_id, status: 2 },
+//         ],
+//         is_deleted: 0,
+//         [Op.or]: [
+//           { '$Sender.first_name$': { [Op.like]: `%${search}%` } },
+//           { '$Sender.last_name$': { [Op.like]: `%${search}%` } },
+//           { '$Sender.username$': { [Op.like]: `%${search}%` } },
+//           { '$Receiver.first_name$': { [Op.like]: `%${search}%` } },
+//           { '$Receiver.last_name$': { [Op.like]: `%${search}%` } },
+//           { '$Receiver.username$': { [Op.like]: `%${search}%` } },
+//         ],
+//         [Op.and]: [
+//           {
+//             '$Sender.user_id$': { [Op.ne]: user_id },
+//           },
+//           {
+//             '$Receiver.user_id$': { [Op.ne]: user_id },
+//           },
+//         ]
+//       },
+//       include: [
+//         {
+//           model: User,
+//           as: "Sender",
+//           attributes: ["user_id", "first_name", "last_name", "email", "username"],
+//           required: false,
+//         },
+//         {
+//           model: User,
+//           as: "Receiver",
+//           attributes: ["user_id", "first_name", "last_name", "email", "username"],
+//           required: false,
+//         },
+//       ],
+//     });
+
+//     const matchedFriends = [];
+
+//     for (const fr of friends) {
+//       const otherUser =
+//         fr.request_sender_id === user_id ? fr.Receiver : fr.Sender;
+
+//       if (!otherUser) continue;
+
+//       matchedFriends.push(otherUser);
+//     }
+
+//     if (matchedFriends.length === 0) {
+//       return res.status(404).json({ message: "No friends found" });
+//     }
+
+//     return res.status(200).json({
+//       message: "Friends retrieved successfully",
+//       friends: matchedFriends,
+//     });
+    
+//   } catch (error) {
+//     next(error);
+//     console.log("Error in Searching Friends:", error);
+    
+//   }
+// }
+
+const searchFriends = async (req, res, next) => {
   try {
-    const { search } = req.query;
     const user_id = req.user;
+    const { search } = req.query;
 
     if (!search || search.trim() === "") {
-      return res.status(400).json({ message: "Search query is required" });
+      return res.status(400).json({ message: "Search query is required." });
     }
 
+    // Step 1: Get all friend IDs where user is sender or receiver
     const friends = await FriendRequest.findAll({
       where: {
-        [Op.or]: [
-          { request_sender_id: user_id, status: 2 },
-          { request_receiver_id: user_id, status: 2 },
-        ],
+        status: 2, // 2 = confirmed friendship
         is_deleted: 0,
         [Op.or]: [
-          { '$Sender.first_name$': { [Op.like]: `%${search}%` } },
-          { '$Sender.last_name$': { [Op.like]: `%${search}%` } },
-          { '$Sender.username$': { [Op.like]: `%${search}%` } },
-          { '$Receiver.first_name$': { [Op.like]: `%${search}%` } },
-          { '$Receiver.last_name$': { [Op.like]: `%${search}%` } },
-          { '$Receiver.username$': { [Op.like]: `%${search}%` } },
-        ],
-        [Op.and]: [
-          {
-            '$Sender.user_id$': { [Op.ne]: user_id },
-          },
-          {
-            '$Receiver.user_id$': { [Op.ne]: user_id },
-          },
+          { request_sender_id: user_id },
+          { request_receiver_id: user_id }
+        ]
+      }
+    });
+
+    // Extract the friend IDs (exclude self)
+    const friendIds = friends.map(fr => (
+      fr.request_sender_id === user_id ? fr.request_receiver_id : fr.request_sender_id
+    ));
+
+    if (friendIds.length === 0) {
+      return res.status(404).json({ message: "No friends found." });
+    }
+
+    // Step 2: Search among those friends
+    const matchedFriends = await User.findAll({
+      where: {
+        user_id: { [Op.in]: friendIds },
+        [Op.or]: [
+          { username: { [Op.like]: `%${search}%` } },
+          { first_name: { [Op.like]: `%${search}%` } },
+          { last_name: { [Op.like]: `%${search}%` } }
         ]
       },
-      include: [
-        {
-          model: User,
-          as: "Sender",
-          attributes: ["user_id", "first_name", "last_name", "email", "username"],
-          required: false,
-        },
-        {
-          model: User,
-          as: "Receiver",
-          attributes: ["user_id", "first_name", "last_name", "email", "username"],
-          required: false,
-        },
-      ],
+      attributes: ["user_id", "username", "first_name", "last_name", "avatar_key"]
     });
-
-    const matchedFriends = [];
-
-    for (const fr of friends) {
-      const otherUser =
-        fr.request_sender_id === user_id ? fr.Receiver : fr.Sender;
-
-      if (!otherUser) continue;
-
-      matchedFriends.push(otherUser);
-    }
-
-    if (matchedFriends.length === 0) {
-      return res.status(404).json({ message: "No friends found" });
-    }
 
     return res.status(200).json({
-      message: "Friends retrieved successfully",
-      friends: matchedFriends,
+      message: "Friends found successfully",
+      users: matchedFriends
     });
-    
+
   } catch (error) {
+    console.error("Error in searchFriends:", error);
     next(error);
-    console.log("Error in Searching Friends:", error);
-    
   }
-}
+};
 
 const createGroupChat = async (req, res, next) => {
   try {
