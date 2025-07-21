@@ -552,6 +552,14 @@ const searchFriends = async (req, res,next) =>{
           { '$Receiver.first_name$': { [Op.like]: `%${search}%` } },
           { '$Receiver.last_name$': { [Op.like]: `%${search}%` } },
           { '$Receiver.username$': { [Op.like]: `%${search}%` } },
+        ],
+        [Op.and]: [
+          {
+            '$Sender.user_id$': { [Op.ne]: user_id },
+          },
+          {
+            '$Receiver.user_id$': { [Op.ne]: user_id },
+          },
         ]
       },
       include: [
