@@ -638,7 +638,7 @@ const getUsersAllRooms = async (req, res, next) => {
         {
           model: User,
           as: "Participants", 
-          attributes: ["user_id", "first_name", "last_name","username", "avatar_key","email"],
+          attributes: ["user_id", "first_name", "last_name","username", "email"],
           through: { attributes: [] }, 
         },
 
