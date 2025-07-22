@@ -308,7 +308,6 @@ const getBlockedUsers = async (req, res, next) => {
 const getFriends = async (req, res, next) => {
   try {
     const user_id = req.user;
-    console.log("User ID:", user_id);
 
     const friends = await FriendRequest.findAll({
       where: {

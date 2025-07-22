@@ -190,10 +190,22 @@ const loginUser = async (req, res, next) => {
       refresh_token_expire_datetime: refreshExp,
     });
 
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",       
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    res.cookie("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
     return res.status(200).json({
       message: "Login successful",
-      access_token: accessToken,
-      refresh_token: refreshToken,
     });
   } catch (err) {
     next(err);
@@ -202,7 +214,7 @@ const loginUser = async (req, res, next) => {
 
 const refreshAccessToken = async (req, res, next) => {
   try {
-    const { refresh_token } = req.body;
+    const refresh_token = req.cookies.refresh_token;
 
     const tokenLog = await UserLoginLogs.findOne({
       where: {
@@ -247,9 +259,22 @@ const refreshAccessToken = async (req, res, next) => {
       refresh_token_expire_datetime: newrefreshExp,
     });
 
+    res.cookie("access_token", newAccessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    res.cookie("refresh_token", newrefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
     return res.status(200).json({
       message: "New access token generated",
-      access_token: newAccessToken,
     });
   } catch (err) {
     next(err);
@@ -275,6 +300,11 @@ const logoutUser = async (req, res, next) => {
     tokenLog.is_logout = 1;
     tokenLog.logout_datetime = new Date();
     await tokenLog.save();
+
+    // Clear cookies
+    res.clearCookie("access_token");
+    res.clearCookie("refresh_token");
+
 
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {

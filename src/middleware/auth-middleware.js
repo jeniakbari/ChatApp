@@ -2,15 +2,10 @@ import CryptoJS from "crypto-js";
 
 export const authenticate = (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res
-        .status(401)
-        .json({ message: "Unauthorized: No token provided" });
+    const token = req.cookies.access_token;
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
-
-    const token = authHeader.split(" ")[1];
 
     // Decrypt the token
     const decryptedData = CryptoJS.AES.decrypt(

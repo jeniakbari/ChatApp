@@ -17,21 +17,16 @@ import { BlockedUser } from './models/blockedUserModel.js';
 import { UserOtpLogs } from './models/userOtpLogsModel.js';
 import { UserLoginLogs } from './models/userLoginLogsModel.js';
 import {MessageReaction} from './models/messageReactionModel.js';
-
-
 import { errorMiddleware } from './middleware/error-middleware.js';
-
-
 import {router} from './routes/indexRoutes.js';
+import cookieParser from 'cookie-parser';
+
 
 dotenv.config();
 
 const app = express();
 
-// app.use(cors({
-//   origin: '*', 
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-// }));
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
