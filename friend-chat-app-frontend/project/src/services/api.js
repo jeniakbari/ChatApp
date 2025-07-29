@@ -3,82 +3,37 @@ import toast from 'react-hot-toast';
 
 const API_BASE_URL = 'http://13.60.64.58/';
 
+// Global configuration for all axios requests
+axios.defaults.withCredentials = true;
+
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add token
-api.interceptors.request.use(
-  (config) => {
-    const userObj = JSON.parse(localStorage.getItem('user') || 'null');
-    const token = userObj?.access_token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
-// Response interceptor to handle token refresh
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     const originalRequest = error.config;
-
-//     if (error.response?.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-
-//       try {
-//         const response = await api.post('/auth/refresh');
-//         const { accessToken } = response.data;
-//         localStorage.setItem('accessToken', accessToken);
-//         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-//         return api(originalRequest);
-//       } catch (refreshError) {
-//         localStorage.removeItem('accessToken');
-//         localStorage.removeItem('user');
-//         window.location.href = '/login';
-//         return Promise.reject(refreshError);
-//       }
-//     }
-
-//     return Promise.reject(error);
-//   }
-// );
-
-// Auth API calls
+// === Auth API ===
 export const authAPI = {
-  register: (first_name, last_name, username, email) => api.post('/api/auth/register', { first_name, last_name, username, email }),
+  register: (first_name, last_name, username, email) =>
+    api.post('/api/auth/register', { first_name, last_name, username, email }),
   verifyEmail: (otp) => api.post('/auth/verify-email', { otp }),
-  sendOtp: (email) => api.post('api/auth/send-otp', { email }),
-  // login: (email, password) => api.post('/auth/login', { email, password }),
+  sendOtp: (email) => api.post('/api/auth/send-otp', { email }),
   loginWithOtp: (email, otp) => api.post('/api/auth/login', { email, otp }),
   logout: () => api.post('/auth/logout'),
   refreshToken: () => api.post('/auth/refresh'),
 };
 
-// User API calls
+// === User API ===
 export const userAPI = {
-  getProfile: () => api.get('api/user/profile'),
-  updateProfile: (data) => api.patch('api/user/profile', data),
-  searchUsers: (query, token) => api.get(`api/user/search?search=${query}`
-    
-    , {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }),
+  getProfile: () => api.get('/api/user/profile'),
+  updateProfile: (data) => api.patch('/api/user/profile', data),
+  searchUsers: (query) => api.get(`/api/user/search?search=${query}`),
   getUsers: () => api.get('/user/all'),
 };
 
-// Friend API calls
+// === Friend API ===
 export const friendAPI = {
   sendRequest: (userId) => api.post('/friends/request', { userId }),
   acceptRequest: (requestId) => api.put(`/friends/accept/${requestId}`),
@@ -91,15 +46,15 @@ export const friendAPI = {
   getBlockedUsers: () => api.get('/friends/blocked'),
 };
 
-// Chat API calls
+// === Chat API ===
 export const chatAPI = {
   getChats: () => api.get('/chat'),
   getChatById: (chatId) => api.get(`/chat/${chatId}`),
-  sendMessage: (chatId, content, type = 'text') => 
+  sendMessage: (chatId, content, type = 'text') =>
     api.post(`/chat/${chatId}/message`, { content, type }),
-  createGroupChat: (name, participants) => 
+  createGroupChat: (name, participants) =>
     api.post('/chat/group', { name, participants }),
-  getMessages: (chatId, page = 1, limit = 50) => 
+  getMessages: (chatId, page = 1, limit = 50) =>
     api.get(`/chat/${chatId}/messages?page=${page}&limit=${limit}`),
 };
 

@@ -139,8 +139,8 @@ function App() {
           </AuthProvider>
         } />
 
-        {/* Default redirect to demo */}
-        <Route path="/" element={<Navigate to="/demo-login" replace />} />
+        {/* Default redirect to real login */}
+        <Route path="/" element={<Navigate to="/app/login" replace />} />
       </Routes>
 
       {/* Toast notifications */}
