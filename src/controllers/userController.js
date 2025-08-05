@@ -662,7 +662,7 @@ const getUsersAllRooms = async (req, res, next) => {
       if (!isGroup) {
         const friend = room.Participants.find(p => p.user_id !== user_id);
         if (friend) {
-          displayName = friend.username || `${friend.first_name} ${friend.last_name}`.trim();
+          displayName = friend.username;
           avatarUrl = friend.avatar_key ? await getSignedUrl(friend.avatar_key) : null;
         }
       }

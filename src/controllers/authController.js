@@ -7,15 +7,21 @@ import { UserLoginLogs } from "../models/userLoginLogsModel.js";
 import { UserOtpLogs } from "../models/userOtpLogsModel.js";
 import { Op } from "sequelize";
 import bcrypt from "bcrypt";
+import { ChatRoom } from "../models/chatRoomModel.js";
+import { ChatParticipant } from "../models/chatParticipantsModel.js";
+import { create } from "domain";
+import { ChatMessage } from "../models/chatMessageModel.js";
 // import cron from 'node-cron';
 
 const registerUser = async (req, res, next) => {
   try {
-    let { first_name, last_name, email, username } = req.body;
+    let { first_name,gender, last_name, email, username } = req.body;
     const avatarKey = req.file ? req.file.key : null;
 
+    if(![1,2].includes(parseInt(gender))){
+      return res.status(400).json({message: "Invalid gender value."})
+    }
     
-
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
@@ -36,6 +42,7 @@ const registerUser = async (req, res, next) => {
       last_name,
       username,
       email,
+      gender,
       verification_token: token,
       avatar_key: avatarKey,
     });
@@ -85,8 +92,47 @@ const verifyEmail = async (req, res, next) => {
 
     user.is_verified = 1;
     await user.save();
+    
+    const aiFriendGender = user.gender; 
+
+    const aiBotUser = await User.findOne({
+      where: {
+        is_bot: 1,
+        gender: aiFriendGender, 
+      },
+    });
+
+    if (!aiBotUser) {
+        return res.status(500).json({ message: "Email verified, but failed to set up AI chat (AI bot not found)." });
+    }
+
+    const aiChatRoom = await ChatRoom.create({
+      created_by: aiBotUser.user_id, 
+      room_type: 1, 
+    });
+
+    if (!aiChatRoom) {
+      console.error("Failed to create AI chat room.");
+      return res.status(500).json({ message: "Email verified, but failed to create AI chat room." });
+    }
+
+    await ChatParticipant.bulkCreate([
+      { user_id: user.user_id, room_id: aiChatRoom.room_id },
+      { user_id: aiBotUser.user_id, room_id: aiChatRoom.room_id },
+    ]);
+
+
+    let default_message = await ChatMessage.create({
+      room_id: aiChatRoom.room_id,
+      sender_id: aiBotUser.user_id,
+      message: aiFriendGender === 1  
+      ? CryptoJS.AES.encrypt(process.env.MALE_AI_FRIEND_MESSAGE, process.env.MESSAGE_SECRET).toString()
+      : CryptoJS.AES.encrypt(process.env.FEMALE_AI_FRIEND_MESSAGE, process.env.MESSAGE_SECRET).toString(),
+    });
+
 
     return res.status(200).json({ message: "Email verified successfully" });
+
   } catch (error) {
     next(error);
   }
@@ -190,17 +236,35 @@ const loginUser = async (req, res, next) => {
       refresh_token_expire_datetime: refreshExp,
     });
 
+    // res.cookie("access_token", accessToken, {
+    //   httpOnly: true,
+    //   // domain: "localhost",
+    //   secure: false,
+    //   sameSite: "Lax",       
+    //   maxAge: 24 * 60 * 60 * 1000 // 1 day
+    // });
+
+    // res.cookie("refresh_token", refreshToken, {
+    //   httpOnly: true,
+    //   // domain: "localhost",
+    //   secure: false,
+    //   sameSite: "Lax",
+    //   maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    // });
+
     res.cookie("access_token", accessToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Strict",       
+      // domain: "localhost",
+      secure: true,
+      sameSite: "None",       
       maxAge: 24 * 60 * 60 * 1000 // 1 day
     });
 
     res.cookie("refresh_token", refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Strict",
+      // domain: "localhost",
+      secure: true,
+      sameSite: "None",
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
@@ -262,14 +326,14 @@ const refreshAccessToken = async (req, res, next) => {
     res.cookie("access_token", newAccessToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "Strict",
+      sameSite: "None",
       maxAge: 24 * 60 * 60 * 1000
     });
 
     res.cookie("refresh_token", newrefreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "Strict",
+      sameSite: "None",
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
 

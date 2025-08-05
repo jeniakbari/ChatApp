@@ -58,7 +58,8 @@ User.init(
         },
         is_verified: {
             type: DataTypes.INTEGER,
-            defaultValue: 0, // 0 for not verified, 1 for verified
+            defaultValue: 0,
+            comment:"0 = not verified, 1 = verified" // 0 = not verified, 1 = verified
         },
         verification_token: {
             type: DataTypes.STRING,
@@ -66,7 +67,23 @@ User.init(
         },
         is_online: {
             type: DataTypes.INTEGER,
-            defaultValue: 0, // 0 for offline, 1 for online
+            defaultValue: 0,
+            comment:"0 = offline, 1 = online" // 0 = offline, 1 = online
+        },
+        gender:{
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            comment:"1 = male , 2 = female" 
+        },
+        is_bot:{
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+            comment:"0 = user, 1 = bot" 
+        },
+        ai_persona: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment:"Persona description for AI users" 
         },
         created_at: {
             type: DataTypes.DATE,

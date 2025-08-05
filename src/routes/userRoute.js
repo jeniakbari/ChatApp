@@ -1,6 +1,7 @@
 import { authenticate } from "../middleware/auth-middleware.js";
 import { Router } from "express";
 import { uploadAvatar } from '../middleware/upload-middleware.js';
+import { testAi } from "../controllers/test.js";
 const router = Router();
 
 import {
@@ -55,9 +56,7 @@ router.route("/all-rooms").get(authenticate, getUsersAllRooms);
 
 router.route("/id").get(getUserById);
 
-router.get("/test", (req, res) => {
-  return res.send("✅ User route working!");
-});
+router.route("/test-ai").post(authenticate, testAi);
 
 
 export { router as userRouter };

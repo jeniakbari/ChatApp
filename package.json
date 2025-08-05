@@ -14,7 +14,9 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.844.0",
     "@aws-sdk/s3-request-presigner": "^3.844.0",
+    "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
+    "cookie": "^1.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

@@ -1,6 +1,5 @@
 import { ChatMessage } from '../models/chatMessageModel.js';
 import { ChatMessageSeen } from '../models/chatMessageSeenModel.js';
-// import { ChatRoom } from '../models/chatRoomModel.js';
 import { ChatParticipant } from '../models/chatParticipantsModel.js';
 import { ChatMessageEdit } from '../models/chatMessageEditModel.js';
 import { UserLoginLogs } from '../models/userLoginLogsModel.js';
@@ -9,13 +8,22 @@ import CryptoJS from 'crypto-js';
 import { Op } from 'sequelize';
 import { ChatRoom } from '../models/chatRoomModel.js';
 import { MessageReaction } from '../models/messageReactionModel.js';
+import cookie from 'cookie';
+import { buildPersona } from '../utility/personaBuilder.js';
+import { getAIResponse } from '../utility/geminiResponse.js';
 
 
 export const socketConnection = (io) => {
   io.on('connection', async (socket) => {
     console.log(` New client connected: ${socket.id}`);
 
-    const token = socket.handshake.headers?.token;
+    const cookies = socket.handshake.headers?.cookie;
+    if (!cookies) {
+      return next(new Error("Unauthorized: No cookies provided"));
+    }
+
+    const parsedCookies = cookie.parse(cookies);
+    const token = parsedCookies.access_token; 
 
     if (!token) {
       console.log("No token provided. Disconnecting...");
@@ -92,7 +100,7 @@ export const socketConnection = (io) => {
           const receiver_id = participant.user_id;
           const isUserInRoom = userIdsInRoom.includes(receiver_id);
 
-          await ChatMessageSeen.create({
+          let seenRecord = await ChatMessageSeen.create({
             message_id: newMessage.message_id,
             user_id: receiver_id,
             seen_at: isUserInRoom ? new Date() : null,
@@ -114,9 +122,79 @@ export const socketConnection = (io) => {
           message_id: newMessage.message_id,
           room_id: room_id,
           sender_id: userId,
-          message: encryptedMessage,
+          message: message,
           seen_by: seenByDetails,
         });
+
+        // Check if bot is in this room
+        const botParticipant = await ChatParticipant.findOne({
+          where: {
+            room_id,
+          },
+          include: {
+            model: User,
+            as: 'User',
+            where: { is_bot: 1 }
+          }
+        });
+
+        if (botParticipant) {
+          const botUser = botParticipant.User;
+          let lastMessage = await ChatMessage.findOne({
+            where:{
+                room_id: room_id,
+                sender_id:botUser.user_id
+            },
+            order: [['created_at', 'DESC']],
+            raw: true
+        })
+
+        if (!lastMessage) {
+            return res.status(404).json({ message: "No messages found in this room" });
+        }
+        
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+        const isToday = new Date(lastMessage.created_at) >= startOfToday &&
+                        new Date(lastMessage.created_at) < endOfToday;
+
+        
+        let isFirstMessage = false;
+        if (!isToday) {
+            isFirstMessage = true;
+        }
+
+        const persona = buildPersona(botUser.gender, botUser.ai_persona , botUser.username,isFirstMessage);
+
+          // Get response from Gemini
+          const aiReply = await getAIResponse(message, persona);
+
+
+          const encryptedAIMessage = CryptoJS.AES.encrypt(aiReply, process.env.MESSAGE_SECRET).toString();
+
+          const aiMessage = await ChatMessage.create({
+            sender_id: botUser.user_id,
+            room_id: room_id,
+            message: encryptedAIMessage,
+          });
+
+          // Mark as seen only by sender (user)
+          await ChatMessageSeen.create({
+            message_id: aiMessage.message_id,
+            user_id: userId,
+            seen_at: new Date(),
+          });
+
+          io.to(room_id).emit('receive_message', {
+            message_id: aiMessage.message_id,
+            room_id: room_id,
+            sender_id: botUser.user_id,
+            message: aiReply,
+          });
+        }
+
        
       });
 
