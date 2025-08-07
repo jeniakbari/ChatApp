@@ -47,16 +47,16 @@ const testAi = async (req, res, next) => {
         ],
         raw: true
         });
-        console.log("findRoom:", findRoom);
+        // console.log("findRoom:", findRoom);
         let aiId = findRoom['Creator.user_id'];
         let aiPersona = findRoom['Creator.ai_persona'];
         let botGender = findRoom['Creator.gender'];
         let aiName = findRoom['Creator.username'];
 
-        console.log("AI ID:", aiId);
-        console.log("AI Persona:", aiPersona);
-        console.log("botGender:", botGender);
-        console.log("AI Name:", aiName)
+        // console.log("AI ID:", aiId);
+        // console.log("AI Persona:", aiPersona);
+        // console.log("botGender:", botGender);
+        // console.log("AI Name:", aiName)
 
         if (!findRoom) {
             return res.status(404).json({ message: "Chat room not found chat" });
