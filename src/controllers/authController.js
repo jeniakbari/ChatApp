@@ -61,13 +61,13 @@ const registerUser = async (req, res, next) => {
     return res.status(201).json({
       message: "User registered successfully, verification email sent",
       // user: {
-      //   user_id: newUser.user_id,
+        user_id: newUser.user_id,
       //   first_name: newUser.first_name,
       //   last_name: newUser.last_name,
       //   username: newUser.username,
       //   email: newUser.email,
       //   avatar_key: newUser.avatar_key,
-      //   token: newUser.verification_token,
+        token: newUser.verification_token,
 
       // },
     });
