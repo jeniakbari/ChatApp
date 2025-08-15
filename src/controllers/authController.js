@@ -60,16 +60,16 @@ const registerUser = async (req, res, next) => {
 
     return res.status(201).json({
       message: "User registered successfully, verification email sent",
-      user: {
-        user_id: newUser.user_id,
-        first_name: newUser.first_name,
-        last_name: newUser.last_name,
-        username: newUser.username,
-        email: newUser.email,
-        avatar_key: newUser.avatar_key,
-        token: newUser.verification_token,
+      // user: {
+      //   user_id: newUser.user_id,
+      //   first_name: newUser.first_name,
+      //   last_name: newUser.last_name,
+      //   username: newUser.username,
+      //   email: newUser.email,
+      //   avatar_key: newUser.avatar_key,
+      //   token: newUser.verification_token,
 
-      },
+      // },
     });
   } catch (error) {
     next(error);
@@ -225,7 +225,7 @@ const loginUser = async (req, res, next) => {
       user.email + Date.now(),
       process.env.REFRESH_SECRET
     ).toString();
-    const accessExp = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000); // 1 days
+    const accessExp = new Date(Date.now() + 15 * 60 * 1000); // 15 min
     const refreshExp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
     await UserLoginLogs.create({
@@ -257,7 +257,7 @@ const loginUser = async (req, res, next) => {
       // domain: "localhost",
       secure: true,
       sameSite: "None",       
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
+      maxAge: 15 * 60 * 1000 // 15 min
     });
 
     res.cookie("refresh_token", refreshToken, {
@@ -270,6 +270,9 @@ const loginUser = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Login successful",
+      user:{
+        user_id: user.user_id,
+      }
     });
   } catch (err) {
     next(err);
@@ -293,6 +296,12 @@ const refreshAccessToken = async (req, res, next) => {
         .status(401)
         .json({ message: "Invalid or expired refresh token" });
     }
+
+    await tokenLog.update({
+      is_logout: 1,
+      logout_datetime: new Date(),
+    })
+
     const user = await User.findOne({
       where: { user_id: tokenLog.user_id },
     });
@@ -306,7 +315,7 @@ const refreshAccessToken = async (req, res, next) => {
       rawAccessToken,
       process.env.ACCESS_SECRET
     ).toString();
-    const newAccessExp = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000);
+    const newAccessExp = new Date(Date.now() + 15 * 60 * 1000); // 15 min
     const newrefreshToken = CryptoJS.AES.encrypt(
       user.email + Date.now(),
       process.env.REFRESH_SECRET
@@ -327,7 +336,7 @@ const refreshAccessToken = async (req, res, next) => {
       httpOnly: true,
       secure: true,
       sameSite: "None",
-      maxAge: 24 * 60 * 60 * 1000
+      maxAge: 15 * 60 * 1000
     });
 
     res.cookie("refresh_token", newrefreshToken, {
