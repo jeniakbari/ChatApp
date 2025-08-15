@@ -420,7 +420,7 @@ const getPendingRequests = async (req, res, next) => {
 
     if (!pendingRequests || pendingRequests.length === 0) {
       return res
-        .status(404)
+        .status(200)
         .json({ message: "No pending friend requests found" });
     }
 
