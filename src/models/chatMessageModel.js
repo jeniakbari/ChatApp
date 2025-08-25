@@ -48,6 +48,23 @@ ChatMessage.init(
             allowNull: false,
             comment: 'Encrypted message',  
         },
+        message_type: {
+            type: DataTypes.ENUM('text', 'image', 'file'),
+            allowNull: true,
+            defaultValue: 'text',
+        },
+        media_key: {           // S3 object key
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        media_mime: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        media_size: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         is_edited: {
             type: DataTypes.INTEGER,
             defaultValue: 0,

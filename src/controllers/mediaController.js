@@ -3,17 +3,20 @@ import { v4 as uuidv4 } from 'uuid';
 
 const requestImageUploadUrl = async (req, res, next) => {
   try {
-    const { fileName, fileType } = req.body;
+    const { fileName, fileType, fileSize } = req.body; // from client
+    const mediaKey = `chat_media/${Date.now()}_${fileName}`;
 
-    const uniqueKey = `chat_images/${uuidv4()}-${fileName}`;
-    const signedUrl = await putSignedUrl(uniqueKey, fileType);
+    const uploadUrl = await getSignedPutUrl(mediaKey, fileType);
 
-    res.status(200).json({
-      uploadUrl: signedUrl,
-      fileKey: uniqueKey
+    res.json({
+      success: true,
+      uploadUrl,    // For client to PUT file
+      media_key: mediaKey,
+      media_mime: fileType,
+      media_size: fileSize
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
